@@ -1,0 +1,17 @@
+<keymap>
+	<map context="CSFDLiteActions">
+		<key id="KEY_YELLOW" mapto="yellowLite" flags="m" />
+		<key id="KEY_GREEN" mapto="greenLite" flags="m" />
+		<key id="KEY_RED" mapto="redLite" flags="m" />
+		<key id="KEY_BLUE" mapto="blueLite" flags="m" />
+		<key id="KEY_LEFT" mapto="leftLite" flags="mr" />
+		<key id="KEY_RIGHT" mapto="rightLite" flags="mr" />
+		<key id="KEY_UP" mapto="upLite" flags="mr" />
+		<key id="KEY_DOWN" mapto="downLite" flags="mr" /> 
+		<key id="KEY_EXIT" mapto="cancelLite" flags="m" />
+		<key id="KEY_ESC" mapto="cancelLite" flags="m" /> 
+		<key id="KEY_OK" mapto="okLite" flags="m" />
+		<key id="KEY_MENU" mapto="contextMenuLite" flags="m" />
+		<key id="KEY_INFO" mapto="showEventInfoLite" flags="m" /> 
+	</map>
+</keymap>

@@ -1,0 +1,51 @@
+﻿1.04
+- úprava po změnách na ČSFD
+
+1.03
+- lepší řazení seznamu u seriálů, zejména konkrétní epizoda je teď obvykle hned na prvním či druhém místě (pokud je její číslo nějakým způsobem obsaženo v názvu pořadu)
+- drobné úpravy v hledání obsahů
+
+1.02
+- úprava pro Dreamboxy
+
+0.99
+- upraveno volání, aby fungovalo i v novějších image
+
+0.98
+- aktualizace kódu po zásadních změnách na ČSFD
+- vzhledem k velké změně vyhledávání na ČSFD bylo přepracováno vyhledávání v pluginu, což se týká především vyhledání epizod seriálů a také pořadů, které v EPG mají nějak doplněný název (často U ČT)
+
+0.97
+- vylepšeno přímé nalezení seriálů a vícedílných pořadů
+- opravena chyba vyskytující se u některých image při volání z EPG místo IMDb
+- drobná úprava v HD skinu 
+
+0.96
+- tato verze slouží jen k otestování automatických aktualizací
+
+0.95
+- automatická aktualizace pluginu
+- velikost plakátu pro stažení se definuje podle velikosti ve skinu
+
+0.94
+- skiny jsou nyní definované v příslušných xml souborech, je možné je upravovat bez nutnosti restartovat enigmu
+- hvězdičky pro Full HD zvětšeny
+- pro Full HD se nyní načítá plakát ve vysokém rozlišení (pokud na csfd.cz ve vyšším rozlišení je, což většinou bývá)
+
+0.93
+- vylepšeno přímé určení filmu, povětšinou bez nutnosti výběru ze seznamu
+- zrychlení načítání filmů, které mají mnoho komentářů
+- nadefinovány klávesy v keymap.xml, nyní při přidržení klávesy pro listování (kurzor nahoru/dolů) funguje autorepetice, kurzor vlevo/vpravo funguje jako page up/down i u seznamu filmů
+- optimalizace kódu
+
+0.92
+- přidány informace o typech filmu (seriál, TV film, epizoda) na stránce informací o filmu
+- přidány informace o nejbližším TV vysílání (na stránce informací o filmu)
+- vizuální úprava na stránce vyhledaných výsledků
+
+0.91
+- ošetřena případně chybějící IMDb
+- přidán skin pro Full HD
+
+0.90
+- počáteční verze se základními funkcemi

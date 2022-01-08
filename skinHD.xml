@@ -1,0 +1,20 @@
+<screen name="CSFDLite" position="center,center" size="900,570" title="CSFD Lite" >
+	<ePixmap pixmap="skin_default/buttons/red.png" position="0,0" zPosition="0" size="140,30" transparent="1" alphatest="on"/>
+	<ePixmap pixmap="skin_default/buttons/green.png" position="140,0" zPosition="0" size="140,30" transparent="1" alphatest="on" />
+	<ePixmap pixmap="skin_default/buttons/yellow.png" position="280,0" zPosition="0" size="140,30" transparent="1" alphatest="on" />
+	<ePixmap pixmap="skin_default/buttons/blue.png" position="420,0" zPosition="0" size="140,30" transparent="1" alphatest="on" />
+	<ePixmap pixmap="skin_default/buttons/key_menu.png" position="565,5" zPosition="0" size="35,25" alphatest="on" />
+	<widget name="key_red" position="0,4" zPosition="1" size="140,30" font="Regular;17" valign="center" halign="center" backgroundColor="#9f1313" transparent="1" />
+	<widget name="key_green" position="140,4" zPosition="1" size="140,30" font="Regular;17" valign="center" halign="center" backgroundColor="#1f771f" transparent="1" />
+	<widget name="key_yellow" position="280,4" zPosition="1" size="140,30" font="Regular;17" valign="center" halign="center" backgroundColor="#a08500" transparent="1" />
+	<widget name="key_blue" position="420,4" zPosition="1" size="140,30" font="Regular;17" valign="center" halign="center" backgroundColor="#18188b" transparent="1" />
+	<widget name="titlelabel" position="10,40" size="750,45" valign="center" font="Regular;24" foregroundColor="#f0b400"/>
+	<widget name="detailslabel" position="145,90" size="745,460" font="Regular;19" />
+	<widget name="extralabel" position="10,50" size="880,500" font="Regular;19" />
+	<widget name="ratinglabel" position="770,40" size="100,45" halign="center" font="Regular;28" foregroundColor="#f0b400"/>
+	<widget name="statusbar" position="10,550" size="880,16" font="Regular;14" foregroundColor="#7a7a52" />
+	<widget name="poster" position="7,90" size="126,180" alphatest="on" />
+	<widget name="menu" position="10,45" size="880,500" zPosition="3" scrollbarMode="showOnDemand" />
+	<widget name="starsbg" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/starsbar_empty.png" position="660,7" zPosition="0" size="210,21" transparent="1" alphatest="on" />
+	<widget name="stars" position="660,7" size="210,21" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/starsbar_filled.png" transparent="1" />
+</screen>
