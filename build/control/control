@@ -1,0 +1,9 @@
+Package: enigma2-plugin-extensions-csfdlite
+Version: 1.04
+Description: CSFDLite
+Section: base
+Priority: optional
+Maintainer: mik9
+Architecture:all
+Homepage: unknown
+Source: none
