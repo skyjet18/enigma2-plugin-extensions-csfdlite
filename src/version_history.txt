@@ -1,5 +1,5 @@
 ﻿1.0
-- prvotna verzia po prerabke na github (vychadza z poslednej verzie 1.04 zverejnenu uzivatelom @mik9)
+- prvotna verzia po prerabke na github (vychadza z poslednej verzie 1.04 zverejnenej uzivatelom @mik9)
 - presunutie pluginu na github aj s aktualizaciou cez tento portal
 - uprava kompatibility py2/py3
 - oprava nahradenia imdb
