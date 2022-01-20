@@ -1,9 +1,10 @@
 Package: enigma2-plugin-extensions-csfdlite
-Version: 1.04
+Version: 3.0
 Description: CSFDLite
 Section: base
 Priority: optional
-Maintainer: mik9
+Maintainer: https://github.com/skyjet18/enigma2-plugin-extensions-csfdlite
 Architecture:all
 Homepage: unknown
 Source: none
+Description: Enigma2 CSFD lite plugin, 3.0

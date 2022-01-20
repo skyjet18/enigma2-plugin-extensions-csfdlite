@@ -1,8 +1,8 @@
 # -*- coding: UTF-8 -*-
 #####################################
-# CSFD Lite by mik9
+# CSFD Lite by origin from mik9
 #####################################
-soucasnaverze=1.04
+PLUGIN_VERSION = "1.0"
 
 from Plugins.Plugin import PluginDescriptor
 from twisted.web.client import downloadPage
@@ -21,6 +21,7 @@ from Components.MenuList import MenuList
 from Components.ProgressBar import ProgressBar
 from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS
 from Components.config import config, ConfigSubsection, ConfigSelection, configfile
+from distutils.version import StrictVersion
 import traceback
 import re
 from random import *
@@ -73,7 +74,9 @@ def eConnectCallback(obj, callbackFun):
 
 def replaceImdb():
 	try:
-		if fileExists(resolveFilename(SCOPE_PLUGINS, "Extensions/IMDb/plugin.py")):
+		if fileExists(resolveFilename(SCOPE_PLUGINS, "Extensions/IMDb/plugin.py")) or \
+		   fileExists(resolveFilename(SCOPE_PLUGINS, "Extensions/IMDb/plugin.pyc")) or\
+		   fileExists(resolveFilename(SCOPE_PLUGINS, "Extensions/IMDb/plugin.pyo")):
 			print('[CSFDLite] Imdb try replace.')
 			#if config.misc.CSFD.CSFDreplaceIMDB.getValue() and CSFDGlobalVar.getIMDBexist():
 			import Plugins.Extensions.IMDb.plugin
@@ -213,6 +216,8 @@ class CSFDLite(Screen):
 			self.omezeninazvu = 70
 		skinsoubor = open(self.skinfile)
 		self.skin = skinsoubor.read()
+		self.github = 'https://github.com/skyjet18/enigma2-plugin-extensions-csfdlite'
+		self.version = StrictVersion(PLUGIN_VERSION)
 		skinsoubor.close()
 		Screen.__init__(self, session)
 		self.eventName = eventName
@@ -392,7 +397,7 @@ class CSFDLite(Screen):
 
 
 	def fetchFailed(self, kde):
-		print("[CSFD] fetch failed " + kde)
+		print("[CSFDLite] fetch failed " + kde)
 		self["statusbar"].setText(toStr("Stále stahuji z CSFD: " + kde))
 
 
@@ -445,7 +450,7 @@ class CSFDLite(Screen):
 			hlavicka = self.nazeveventuproskin
 			if self.rokEPG != '':
 				hlavicka += ' (' + self.rokEPG + ')'	
-			self.setTitle(toStr("Výsledky hledání pro " + hlavicka + " - CSFD Lite v. " + str(soucasnaverze)))
+			self.setTitle(toStr("Výsledky hledání pro " + hlavicka + " - CSFD Lite v. " + str(self.version)))
 			self["menu"].show()
 			self["stars"].hide()
 			self["starsbg"].hide()
@@ -479,11 +484,11 @@ class CSFDLite(Screen):
 			if self.commentsSort == 2:	
 				fetchurl = "https://www.csfd.cz/film/" + self.link + "/recenze/?sort=rating"
 
-			print("[CSFD] downloading query " + fetchurl + " to " + localfile)
+			print("[CSFDLite] downloading query " + fetchurl + " to " + localfile)
 			dwnpage(fetchurl,localfile).addCallback(self.CSFDquery2).addErrback(self.fetchFailed("showDetails"))
 			self["menu"].hide()
 			self.resetLabels()
-			self.setTitle(self.nazevkomplet + " - CSFD Lite v. " + str(soucasnaverze))
+			self.setTitle(self.nazevkomplet + " - CSFD Lite v. " + str(self.version))
 			self["titlelabel"].show()
 			self.Page = 1
 
@@ -600,7 +605,7 @@ class CSFDLite(Screen):
 			fetchurl = "https://www.csfd.cz/hledat/?q=" + dotaz1
 			self.puvodniurl = fetchurl
 			open(localfile, 'w').close()
-			print("[CSFD] Downloading Query " + fetchurl + " to " + localfile)
+			print("[CSFDLite] Downloading Query " + fetchurl + " to " + localfile)
 			dwnpage(fetchurl,localfile).addCallback(self.CSFDquery).addErrback(self.CSFDquery)
 		else:
 			self["statusbar"].setText(toStr("Nejde získat Eventname"))
@@ -619,7 +624,7 @@ class CSFDLite(Screen):
 			nazevfilmu = nazevfilmu.replace("\t","").replace("\n","")
 			self.resultlist = [(nazevfilmu, odkaz)]
 		else:
-			print("[CSFD] ziskavani seznamu")
+			print("[CSFDLite] ziskavani seznamu")
 			self.resultlist = []
 			seznamfilmu = self.najdi('<h2>Filmy(.*?)<h2>Seri', self.inhtml)
 			seznamserialu = self.najdi('<h2>Seri(.*?)</section>', self.inhtml)
@@ -642,7 +647,7 @@ class CSFDLite(Screen):
 			localfile = "/tmp/CSFDquery_dotaz2.html"
 			fetchurl = "https://www.csfd.cz/hledat/?q=" + self.jmeno1
 			self.puvodniurl = fetchurl
-			print("[CSFD] Downloading Query " + fetchurl + " to " + localfile)
+			print("[CSFDLite] Downloading Query " + fetchurl + " to " + localfile)
 			dwnpage(fetchurl,localfile).addCallback(self.CSFDquery_dotaz2).addErrback(self.fetchFailed("CSFDquery"))
 
 
@@ -657,7 +662,7 @@ class CSFDLite(Screen):
 			nazevfilmu = nazevfilmu.replace("\t","").replace("\n","")
 			self.resultlist = [(nazevfilmu, odkaz)]
 		elif "SFD.cz </title>" in self.inhtml:
-			print("[CSFD] ziskavani seznamu 2")
+			print("[CSFDLite] ziskavani seznamu 2")
 			for odkaz, filmnazev, filminfo in self.hledejVse('<h3.*?<a href="/film/(.*?)".*?"film-title-name">(.*?)</a>(.*?)</h3>', self.inhtml):
 				hlavninazev = filmnazev
 				celynazev = hlavninazev
@@ -674,7 +679,7 @@ class CSFDLite(Screen):
 				localfile = "/tmp/CSFDquery_dotaz3.html"
 				fetchurl = "https://www.csfd.cz/hledat/?q=" + self.jmeno2
 				self.puvodniurl = fetchurl
-				print("[CSFD] Downloading Query " + fetchurl + " to " + localfile)
+				print("[CSFDLite] Downloading Query " + fetchurl + " to " + localfile)
 				dwnpage(fetchurl,localfile).addCallback(self.CSFDquery_dotaz3).addErrback(self.fetchFailed("CSFDquery_dotaz2"))
 			else:
 				self.projitSeznam()
@@ -693,7 +698,7 @@ class CSFDLite(Screen):
 			nazevfilmu = nazevfilmu.replace("\t","").replace("\n","")
 			self.resultlist = [(nazevfilmu, odkaz)]
 		elif "SFD.cz </title>" in self.inhtml:
-			print("[CSFD] ziskavani seznamu 3")
+			print("[CSFDLite] ziskavani seznamu 3")
 			for odkaz, filmnazev, filminfo in self.hledejVse('<h3.*?<a href="/film/(.*?)".*?"film-title-name">(.*?)</a>(.*?)</h3>', self.inhtml):
 				hlavninazev = filmnazev
 				celynazev = hlavninazev
@@ -710,45 +715,48 @@ class CSFDLite(Screen):
 
 
 	def projitSeznam(self):	
-		print("[CSFD] prochazim seznam")
-		self.resultlist = sorted(set(self.resultlist), key=self.resultlist.index)   # odstraneni duplicit v seznamu
-		shoda = []
-		for nazevinfo, odkaz, nazevfilmu, rok in self.resultlist:
-			konvertovanynazev = ""
-			nazevfilmu = self.odstraneniTagu(nazevfilmu)
-			for znak in nazevfilmu:
-				if ord(znak) > 127:
-					znak = "\\x" + znak.encode("hex")
-				konvertovanynazev += znak
-			if self.malaPismena(self.odstraneniInterpunkce(konvertovanynazev)) == self.malaPismena(self.odstraneniInterpunkce(self.nazeveventu)):
-				shoda += [(self.odstraneniTagu(nazevinfo), odkaz, rok)]
-		if len(shoda) == 1:
-			self.nazevkomplet, self.link, v3 = shoda[0]
-			self.unikatni = True
-		elif len(shoda) > 1:
-			for nazevinfo, odkaz, rok in shoda:
-				if self.rokEPG == rok and not self.unikatni:
-					self.nazevkomplet, self.link, v3 = self.odstraneniTagu(nazevinfo), odkaz, rok
-					self.unikatni = True
-		self.resultlist = [(v1, v2) for v1, v2, v3, v4 in self.resultlist]
+		print("[CSFDLite] prochazim seznam")
+		try:
+			self.resultlist = sorted(set(self.resultlist), key=self.resultlist.index)   # odstraneni duplicit v seznamu
+			shoda = []
+			for nazevinfo, odkaz, nazevfilmu, rok in self.resultlist:
+				nazevfilmu = self.odstraneniTagu(nazevfilmu)
+				konvertovanynazev = self.removeD(nazevfilmu)
+				# for znak in nazevfilmu:
+				# 	if ord(znak) > 127:
+				# 		znak = "\\x" + znak.encode("hex")
+				# 	konvertovanynazev += znak
+				if self.malaPismena(self.odstraneniInterpunkce(konvertovanynazev)) == self.malaPismena(self.odstraneniInterpunkce(self.nazeveventu)):
+					shoda += [(self.odstraneniTagu(nazevinfo), odkaz, rok)]
+			if len(shoda) == 1:
+				self.nazevkomplet, self.link, v3 = shoda[0]
+				self.unikatni = True
+			elif len(shoda) > 1:
+				for nazevinfo, odkaz, rok in shoda:
+					if self.rokEPG == rok and not self.unikatni:
+						self.nazevkomplet, self.link, v3 = self.odstraneniTagu(nazevinfo), odkaz, rok
+						self.unikatni = True
+			self.resultlist = [(v1, v2) for v1, v2, v3, v4 in self.resultlist]
 
-		if self.resultlist:
-			self.resultlist = [(self.odstraneniTagu(nazevinfo), odkaz) for nazevinfo, odkaz in self.resultlist]
-			self["menu"].l.setList(self.resultlist)
-			self['menu'].moveToIndex(0)
-			if len(self.resultlist) == 1 or self.unikatni:
-				self.Page = 1
-				self.showMenu()
-				self.Page = 0
-				self["extralabel"].hide()
-				self.showDetails()
-			elif len(self.resultlist) > 1:
-				self.Page = 1
-				self.showMenu()
-		else:
-			self["detailslabel"].setText("Nenalezena informace v CSFD pro %s" % (self.nazeveventuproskin))
-			self["statusbar"].setText("Nenalezena informace v CSFD pro %s" % (self.nazeveventuproskin))
-		self.kontrolaUpdate()
+			if self.resultlist:
+				self.resultlist = [(self.odstraneniTagu(nazevinfo), odkaz) for nazevinfo, odkaz in self.resultlist]
+				self["menu"].l.setList(self.resultlist)
+				self['menu'].moveToIndex(0)
+				if len(self.resultlist) == 1 or self.unikatni:
+					self.Page = 1
+					self.showMenu()
+					self.Page = 0
+					self["extralabel"].hide()
+					self.showDetails()
+				elif len(self.resultlist) > 1:
+					self.Page = 1
+					self.showMenu()
+			else:
+				self["detailslabel"].setText("Nenalezena informace v CSFD pro %s" % (self.nazeveventuproskin))
+				self["statusbar"].setText("Nenalezena informace v CSFD pro %s" % (self.nazeveventuproskin))
+			self.kontrolaUpdate()
+		except:
+			print("/////////// ERROR %s"%traceback.format_exc())
 
 
 	def CSFDquery2(self, string):
@@ -819,7 +827,7 @@ class CSFDLite(Screen):
 					posterurl = posterurl.replace('w140', 'w420')
 					self["statusbar"].setText(toStr("Stahování plakátu k filmu: %s" % (posterurl)))
 					localfile = "/tmp/poster.jpg"
-					print("[CSFD] downloading poster " + posterurl + " to " + localfile)
+					print("[CSFDLite] downloading poster " + posterurl + " to " + localfile)
 					try:
 						dwnpage(posterurl,localfile).addCallback(self.CSFDPoster).addErrback(self.fetchFailed("CSFDparse - poster"))
 					except:
@@ -906,7 +914,7 @@ class CSFDLite(Screen):
 				self["statusbar"].setText(toStr("Stahování 2. stránky komentářů: %s" % (self.link2)))
 				localfile = "/tmp/CSFDquery3.html"
 				fetchurl = "https://www.csfd.cz" + self.link2
-				print("[CSFD] downloading query " + fetchurl + " to " + localfile)
+				print("[CSFDLite] downloading query " + fetchurl + " to " + localfile)
 				dwnpage(fetchurl,localfile).addCallback(self.CSFDquery3).addErrback(self.fetchFailed("CSFDparse - druha stranka"))
 			else:
 				self.zobrazKomentare(Extratext)
@@ -946,38 +954,52 @@ class CSFDLite(Screen):
 		else:
 			kontrolovatupdate = True
 		if kontrolovatupdate:
+			print("////////// kontrolujem aktualizaciu...")
 			open(naposledy, 'w').close()
 			self.cisloverze = '/tmp/nova_verze.txt'
-			dwnpage('http://ab-forum.info/ftp/csfdlite/nova_verze.txt?' + str(randint(1000, 9999)), self.cisloverze).addCallback(self.porovnaniVerze).addErrback(self.fetchFailed("kontrolaUpdate"))
+			dwnpage(self.github+'/blob/master/version.txt', self.cisloverze).addCallback(self.porovnaniVerze).addErrback(self.fetchFailed("kontrolaUpdate"))
 
-
+	def removeD(self, text):
+		searchExp = text
+		try:
+			if sys.version_info >= (3, 0, 0):
+				import unicodedata
+				searchExp = ''.join((c for c in unicodedata.normalize('NFD', searchExp) 
+											if unicodedata.category(c) != 'Mn'))
+			else:
+				if isinstance(searchExp, str):
+					return searchExp
+				import unicodedata
+				searchExp = ''.join((c for c in unicodedata.normalize('NFD', searchExp) 
+											if unicodedata.category(c) != 'Mn')).encode('utf-8')
+		except:
+			print("Remove diacritics '%s' failed.\n%s"%(text,traceback.format_exc()))
+			
+		return searchExp
 	def porovnaniVerze(self, string):
+		ver = StrictVersion('')
 		if (path.exists(self.cisloverze) and path.isfile(self.cisloverze) and access(self.cisloverze, R_OK)):
-			souborverze = open(self.cisloverze)
-			novaverze = souborverze.read()
-			souborverze.close()
-			novaverze = self.najdi('([0-9]?[0-9].[0-9]?[0-9])', novaverze)
-			if novaverze == '':
-				novaverze = 0
+			with open(self.cisloverze, 'r') as f:
+				ver = StrictVersion(f.read().strip())
 			remove(self.cisloverze)
 		else:
-			novaverze = 0
-			self.session.open(MessageBox, toStr("Není k dospozici informace o verzích na ab-forum"), MessageBox.TYPE_INFO, timeout=30)
-		if float(novaverze) > float(soucasnaverze):
-			self.koncovkasouboru = str(novaverze)
-			self.session.openWithCallback(self.provedeniUpdate, MessageBox, "Spustit aktualizaci pluginu CSFDLite na verzi " + novaverze + "?", MessageBox.TYPE_YESNO)
+			self.session.open(MessageBox, toStr("Není k dospozici informace o verzích na githubu"), MessageBox.TYPE_INFO, timeout=30)
+		if ver and ver > self.version:
+			print("////////// najdena nova verzia pluginu: %s/%s"%(self.version, ver))
+			self.koncovkasouboru = 'csfdlite_%s.%s.tar.gz'%(ver.version[0],ver.version[1])
+			self.session.openWithCallback(self.provedeniUpdate, MessageBox, "Spustit aktualizaci pluginu CSFDLite na verzi " + str(ver) + "?", MessageBox.TYPE_YESNO)
 
 
 	def provedeniUpdate(self, odpoved):
 		if odpoved:
 			if self.kontejnerfunguje:
-				dwnpage('http://ab-forum.info/ftp/csfdlite/CSFDLite' + self.koncovkasouboru + '.tar?' + str(randint(1000, 9999)), '/tmp/CSFDLite.tar').addCallback(self.rozbaleniTaru).addErrback(self.fetchFailed("provedeniUpdate"))
+				dwnpage(self.github+'/blob/master/releases/' + self.koncovkasouboru, '/tmp/CSFDLite.tar.gz').addCallback(self.rozbaleniTaru).addErrback(self.fetchFailed("provedeniUpdate"))
 			else:
 				self.session.open(MessageBox, toStr("Nainstalovaná verze enigmy nemá objekt eConsoleAppContainer, aktualizujte plugin ručně"), MessageBox.TYPE_INFO, timeout=60)
 
 
 	def rozbaleniTaru(self, string):
-		if self.container.execute('tar xvf /tmp/CSFDLite.tar -C /usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/'):
+		if self.container.execute('tar xvf /tmp/CSFDLite.tar.gz -C /usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/'):
 			self.session.open(MessageBox, toStr("Problém s prováděním příkazu v containeru, aktualizace neproběhla"), MessageBox.TYPE_INFO, timeout=30)
 
 
