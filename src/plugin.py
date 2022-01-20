@@ -216,7 +216,6 @@ class CSFDLite(Screen):
 			self.omezeninazvu = 70
 		skinsoubor = open(self.skinfile)
 		self.skin = skinsoubor.read()
-		self.github = 'https://github.com/skyjet18/enigma2-plugin-extensions-csfdlite'
 		self.version = StrictVersion(PLUGIN_VERSION)
 		skinsoubor.close()
 		Screen.__init__(self, session)
@@ -957,7 +956,7 @@ class CSFDLite(Screen):
 			print("////////// kontrolujem aktualizaciu...")
 			open(naposledy, 'w').close()
 			self.cisloverze = '/tmp/nova_verze.txt'
-			dwnpage(self.github+'/blob/master/version.txt', self.cisloverze).addCallback(self.porovnaniVerze).addErrback(self.fetchFailed("kontrolaUpdate"))
+			dwnpage('https://raw.githubusercontent.com/skyjet18/enigma2-plugin-extensions-csfdlite/master/version.txt', self.cisloverze).addCallback(self.porovnaniVerze).addErrback(self.fetchFailed("kontrolaUpdate"))
 
 	def removeD(self, text):
 		searchExp = text
@@ -993,7 +992,7 @@ class CSFDLite(Screen):
 	def provedeniUpdate(self, odpoved):
 		if odpoved:
 			if self.kontejnerfunguje:
-				dwnpage(self.github+'/blob/master/releases/' + self.koncovkasouboru, '/tmp/CSFDLite.tar.gz').addCallback(self.rozbaleniTaru).addErrback(self.fetchFailed("provedeniUpdate"))
+				dwnpage('https://github.com/skyjet18/enigma2-plugin-extensions-csfdlite/blob/master/releases/' + self.koncovkasouboru+'?raw=true', '/tmp/CSFDLite.tar.gz').addCallback(self.rozbaleniTaru).addErrback(self.fetchFailed("provedeniUpdate"))
 			else:
 				self.session.open(MessageBox, toStr("Nainstalovaná verze enigmy nemá objekt eConsoleAppContainer, aktualizujte plugin ručně"), MessageBox.TYPE_INFO, timeout=60)
 
