@@ -30,9 +30,9 @@ mkdir deb
 pushd deb
 tar -xf ../data.tar
 mkdir DEBIAN
-cp ../control/control DEBIAN/
+cp ../control/* DEBIAN/
 popd
-dpkg-deb -Zgzip -b deb `basename -s .ipk $PKG_NAME`.deb
+dpkg-deb --root-owner-group -Zgzip -b deb `basename -s .ipk $PKG_NAME`.deb
 
 rm $CUR_DIR/data.tar
 rm -rf deb

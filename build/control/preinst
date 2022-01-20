@@ -1,0 +1,7 @@
+#!/bin/sh
+
+PLUGINPATH=/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite
+rm -rf $PLUGINPATH/*.pyo
+rm -rf $PLUGINPATH/*.pyc
+
+exit 0
