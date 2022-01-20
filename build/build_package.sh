@@ -12,12 +12,12 @@ if ! [[ $VER =~ $regex ]]; then
 	exit 1
 fi
 
+PLUGINPATH=usr/lib/enigma2/python/Plugins/Extensions/CSFDLite
 PKG_NAME=csfdlite_${VER}
 
 cat > control/control << EOF
 Package: enigma2-plugin-extensions-csfdlite
 Version: $VER
-Description: CSFDLite
 Section: base
 Priority: optional
 Maintainer: https://github.com/skyjet18/enigma2-plugin-extensions-csfdlite
@@ -27,11 +27,14 @@ Source: none
 Description: Enigma2 CSFD lite plugin, $VER
 EOF
 
+
 cd ../
 rm -rf package
 mkdir package
 cd package
-tar -C ../src/ -czf data.tar.gz .
+mkdir -p ${PLUGINPATH}
+cp -rp ../src/* ${PLUGINPATH}
+tar -C . -czf data.tar.gz .
 tar -C ../build/control -czf control.tar.gz .
 cat "2.0" > debian-binary
 
