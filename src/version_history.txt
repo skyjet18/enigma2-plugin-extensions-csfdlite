@@ -1,4 +1,7 @@
-﻿1.0
+﻿verzia 1.1 - 24.01.2022
+- pridana nova obrazovka - nastavenia
+
+verzia 1.0 - 20.01.2022
 - prvotna verzia po prerabke na github (vychadza z poslednej verzie 1.04 zverejnenej uzivatelom @mik9)
 - presunutie pluginu na github aj s aktualizaciou cez tento portal
 - uprava kompatibility py2/py3

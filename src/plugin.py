@@ -4,6 +4,11 @@
 #####################################
 PLUGIN_VERSION = "1.0"
 
+############## @TODOs
+# - lokalizacia cz, sk, en
+# - redesign
+############## @TODOs
+
 from Plugins.Plugin import PluginDescriptor
 from twisted.web.client import downloadPage
 from enigma import ePicLoad, eServiceReference, eServiceCenter, getDesktop, iServiceInformation, eConsoleAppContainer
@@ -19,14 +24,15 @@ from Components.Button import Button
 from Components.AVSwitch import AVSwitch
 from Components.MenuList import MenuList
 from Components.ProgressBar import ProgressBar
+from Components.ConfigList import ConfigListScreen
 from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS
-from Components.config import config, ConfigSubsection, ConfigSelection, configfile
+from Components.config import config, ConfigSubsection, ConfigSelection, configfile, ConfigYesNo, getConfigListEntry
 from distutils.version import StrictVersion
 import traceback
 import re
 from random import *
 import sys
-from os import path, access, R_OK, remove
+from os import path, access, R_OK, remove, listdir
 import time
 try:
 	from urllib import quote
@@ -35,13 +41,16 @@ except:
 	from urllib.request import build_opener, HTTPRedirectHandler
 	from urllib.parse import quote
 
-lst = []
-lst.append(("1", "ByDateDesc"))
-lst.append(("2", "ByRating"))
+####################### SETTINGS
 config.plugins.CSFDLite = ConfigSubsection()
-config.plugins.CSFDLite.sort = ConfigSelection(default="1", choices=lst)
-cfg = config.plugins.CSFDLite
-
+SKIN_PATH = path.join(resolveFilename(SCOPE_PLUGINS), 'Extensions/CSFDLite')
+skinChoices = [(fname, path.splitext(fname)[0].replace('skin','').replace('_','')) for fname in listdir(SKIN_PATH) if fname.startswith('skin') and fname.endswith('.xml') ]
+skinChoices.insert(0,'auto')
+config.plugins.CSFDLite.skin = ConfigSelection(default="auto", choices=skinChoices)
+order = [('1', 'Podľa dátumu zostupne'), ('2', 'Podľa dátumu vzostupne'), ('3', 'Podľa hodnotenia')]
+config.plugins.CSFDLite.commentsOrder = ConfigSelection(default="1", choices=order)
+config.plugins.CSFDLite.replaceImdb = ConfigYesNo(default=False)
+####################### SETTINGS
 
 class eConnectCallbackObj:
 	def __init__(self, obj=None, connectHandler=None):
@@ -74,16 +83,17 @@ def eConnectCallback(obj, callbackFun):
 
 def replaceImdb():
 	try:
-		if fileExists(resolveFilename(SCOPE_PLUGINS, "Extensions/IMDb/plugin.py")) or \
-		   fileExists(resolveFilename(SCOPE_PLUGINS, "Extensions/IMDb/plugin.pyc")) or\
-		   fileExists(resolveFilename(SCOPE_PLUGINS, "Extensions/IMDb/plugin.pyo")):
-			print('[CSFDLite] Imdb try replace.')
-			#if config.misc.CSFD.CSFDreplaceIMDB.getValue() and CSFDGlobalVar.getIMDBexist():
-			import Plugins.Extensions.IMDb.plugin
-			Plugins.Extensions.IMDb.plugin.IMDB = CSFDLite
-			print('[CSFDLite] Imdb replace DONE.')
-		else:
-			print('[CSFDLite] Imdb plugin not installed. Nothing to replace.')
+		if config.plugins.CSFDLite.replaceImdb.value:
+			if fileExists(resolveFilename(SCOPE_PLUGINS, "Extensions/IMDb/plugin.py")) or \
+			fileExists(resolveFilename(SCOPE_PLUGINS, "Extensions/IMDb/plugin.pyc")) or\
+			fileExists(resolveFilename(SCOPE_PLUGINS, "Extensions/IMDb/plugin.pyo")):
+				print('[CSFDLite] Imdb try replace.')
+				#if config.misc.CSFD.CSFDreplaceIMDB.getValue() and CSFDGlobalVar.getIMDBexist():
+				import Plugins.Extensions.IMDb.plugin
+				Plugins.Extensions.IMDb.plugin.IMDB = CSFDLite
+				print('[CSFDLite] Imdb replace DONE.')
+			else:
+				print('[CSFDLite] Imdb plugin not installed. Nothing to replace.')
 	except:
 		print('[CSFDLite] Imdb replace failed. %s'%traceback.format_exc())
 
@@ -130,6 +140,99 @@ def norm(text):
 		pass
 	return exp
 
+class CSFDLiteConfigScreen(Screen, ConfigListScreen):
+	def __init__(self, session):
+		Screen.__init__(self, session)
+		ConfigListScreen.__init__(self, [], session=session)#, on_change=self.changedEntry)
+		#self.onChangedEntry = [ ]
+		self.skinBefore = config.plugins.CSFDLite.skin.value
+		self.config_list_entries = []
+		size = getDesktop(0).size()
+		isDmm = False
+		try:
+			from enigma import eMediaDatabase
+			isDmm = True
+		except:
+			pass
+		width = size.width()
+		fntTitle = '35' if width >= 1920 else '28'
+		itmHeight = '40' if width >= 1920 else '32'
+		fntDmm = '' if isDmm else ('font="Regular;30"' if width >= 1920 else 'font="Regular;24"')
+		fntFooter = '35' if width >= 1920 else '28'
+		self.skin = '''
+		<screen name="CSFDLiteConfigScreen" position="center,center" size="800,500" flags="wfNoBorder" backgroundColor="#80ffffff">
+			<eLabel name="bg_title" position="10,10" size="780,90" zPosition="-1" backgroundColor="#20000000" />
+			<eLabel name="bg_list" position="10,110" size="780,280" zPosition="-1" backgroundColor="#20000000" />
+			<eLabel name="bg_bottom" position="10,400" size="780,90" zPosition="-1" backgroundColor="#20000000" />
+
+			<widget name="title_label" font="Regular;%s" backgroundColor="#20000000" halign="left" valign="center" position="20,10" size="480,90" transparent="1" />
+
+			<widget name="config" position="15,120" size="775,270" itemHeight="%s" %s scrollbarMode="showOnDemand" transparent="1" />
+
+			<eLabel name="btn_red" position="20,415" size="10,60" backgroundColor="#00f23d21" zPosition="2" />
+			<eLabel name="btn_green" position="370,415" size="10,60" backgroundColor="#0031a500" zPosition="2" />
+			<widget backgroundColor="#20000000" transparent="1" valign="center" halign="left" font="Regular;%s" name="key_red" position="40,400" size="340,90" zPosition="1" />
+			<widget backgroundColor="#20000000" transparent="1" valign="center" halign="left" font="Regular;%s" name="key_green" position="390,400" size="340,90" zPosition="1" />
+		</screen>
+		''' % (fntTitle, itmHeight, fntDmm, fntFooter, fntFooter)
+
+		self['title_label'] = Label("CSFDLite - Nastavenia")
+		self["key_red"] = Label("Zrušiť")
+		self["key_green"] = Label("Uložiť")
+
+		self["actions"] = ActionMap(["SetupActions", "ColorActions", "DirectionActions"],
+            {
+                "left": self.keyLeft,
+				"right": self.keyRight,
+				"up": self.keyUp,
+			    "down": self.keyDown,
+                "cancel": self.keyCancel,
+                "green": self.keySave,
+                "red": self.keyCancel,
+            }, -2)
+
+		self.onShown.append(self.getSettings)
+
+	def getSettings(self):
+		self.config_list_entries = []
+		self.config_list_entries.append(getConfigListEntry("Skin", config.plugins.CSFDLite.skin))
+		self.config_list_entries.append(getConfigListEntry("Radenie komentárov", config.plugins.CSFDLite.commentsOrder))
+		self.config_list_entries.append(getConfigListEntry("Nahradiť IMDB", config.plugins.CSFDLite.replaceImdb))
+		self["config"].list = self.config_list_entries
+		self["config"].setList(self.config_list_entries)
+
+	#def changedEntry(self):
+		# for x in self.onChangedEntry:
+		# 	x()
+	def keyLeft(self):
+		ConfigListScreen.keyLeft(self)
+	def keyRight(self):
+		ConfigListScreen.keyRight(self)
+	def keyDown(self):
+		self["config"].instance.moveSelection(self["config"].instance.moveDown)
+	def keyUp(self):
+		self["config"].instance.moveSelection(self["config"].instance.moveUp)
+	def keySave(self):
+		def restart_e2(callback=None):
+			try:
+				from Screens.Standby import TryQuitMainloop
+				if callback:
+					from Screens.Standby import TryQuitMainloop
+					self.session.open(TryQuitMainloop, 3)
+				else:
+					self.close(True)
+			except:
+				self.close(True)
+		self.saveAll()
+		if self.skinBefore != config.plugins.CSFDLite.skin.value:
+			self.session.openWithCallback(restart_e2, MessageBox, "Zmeny v nastaveniach sa prejavia po reštarte E2. Chcete reštartovať teraz?", type=MessageBox.TYPE_YESNO)
+		else:
+			self.close(True)
+	def keyCancel(self):
+		for x in self["config"].list:
+			x[1].cancel()
+		self.close()
+
 class CSFDChannelSelection(SimpleChannelSelection):
 	def __init__(self, session):
 		SimpleChannelSelection.__init__(self, session, "Volba kanálu")
@@ -140,7 +243,6 @@ class CSFDChannelSelection(SimpleChannelSelection):
 				"showEPGList": self.channelSelected
 			}
 		)
-
 
 	def channelSelected(self):
 		ref = self.getCurrentSelection()
@@ -154,11 +256,9 @@ class CSFDChannelSelection(SimpleChannelSelection):
 				openPlugin = False
 			)
 
-
 	def epgClosed(self, ret = None, popis = ""):
 		if ret:
 			self.close(ret, popis)
-
 
 class CSFDEPGSelection(EPGSelection):
 	def __init__(self, session, ref, openPlugin = True):
@@ -167,10 +267,8 @@ class CSFDEPGSelection(EPGSelection):
 		self["key_green"].setText(toStr("Hledání"))
 		self.openPlugin = openPlugin
 
-
 	def infoKeyPressed(self):
 		self.timerAdd()
-
 
 	def timerAdd(self):
 		cur = self["list"].getCurrent()
@@ -190,10 +288,8 @@ class CSFDEPGSelection(EPGSelection):
 		else:
 			self.close(evt.getEventName(),self.popiskomplet)
 
-
 	def onSelectionChanged(self):
 		pass
-
 
 class CSFDLite(Screen):
 	#def __init__(self, session, eventName='', callbackNeeded=False, EPG='', sourceEPG=False, DVBchannel='', *args, **kwargs):
@@ -201,23 +297,28 @@ class CSFDLite(Screen):
 	#def __init__(self, session, eventName, predanypopis='', args=None):
 	#def __init__(self, session, eventName='', callbackNeeded=False, predanypopis='',sourceEPG=False, DVBchannel='', *args, **kwargs):
 	def __init__(self, session, eventName, predanypopis='', args=None):
-		self.sirkadispleje = getDesktop(0).size().width()
-		if getDesktop(0).size().width() > 1800:
-			try:
-				from enigma import eMediaDatabase
-				self.skinfile = "/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/skinFullHD2.xml"	
-			except:
-				self.skinfile = "/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/skinFullHD.xml"
-			self.omezenikomentaru = 500000
-			self.omezeninazvu = 100
+		settingskin = config.plugins.CSFDLite.skin.value
+		if settingskin == 'auto':
+			self.sirkadispleje = getDesktop(0).size().width()
+			if getDesktop(0).size().width() > 1800:
+				try:
+					from enigma import eMediaDatabase
+					self.skinfile = "/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/skinFullHD2.xml"	
+				except:
+					self.skinfile = "/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/skinFullHD.xml"
+				self.omezenikomentaru = 500000
+				self.omezeninazvu = 100
+			else:
+				self.skinfile = "/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/skinHD.xml"
+				self.omezenikomentaru = 500000
+				self.omezeninazvu = 70
 		else:
-			self.skinfile = "/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/skinHD.xml"
-			self.omezenikomentaru = 500000
-			self.omezeninazvu = 70
+			self.skinfile = path.join(SKIN_PATH, settingskin)
+
 		skinsoubor = open(self.skinfile)
 		self.skin = skinsoubor.read()
-		self.version = StrictVersion(PLUGIN_VERSION)
 		skinsoubor.close()
+		self.version = StrictVersion(PLUGIN_VERSION)
 		Screen.__init__(self, session)
 		self.eventName = eventName
 		self.predanypopis = predanypopis
@@ -237,13 +338,13 @@ class CSFDLite(Screen):
 		self.resultlist = []
 		self["menu"] = MenuList(self.resultlist)
 		self["menu"].hide()
-		self["key_red"] = Button("Exit")
+		self["key_red"] = Button("Nastavenia")
 		self["key_green"] = Button("")
 		self["key_yellow"] = Button("")
 		self["key_blue"] = Button("")
 		self.commentsSort = 1
 		try:
-			self.commentsSort=int(cfg.sort.value) # 1- date_desc, 2- rating (?sort=datetime_desc, ?sort=rating)
+			self.commentsSort = int(config.plugins.CSFDLite.commentsOrder.value) # 1- date_desc, 2- date_asc, 3- rating 
 		except:
 			pass
 		# 0 = multiple query selection menu page
@@ -258,7 +359,7 @@ class CSFDLite(Screen):
 			"upLite": self.pageUp,
 			"rightLite": self.vpravo,
 			"leftLite": self.vlevo,
-			"redLite": self.__onClose,
+			"redLite": self.openSettings,
 			"greenLite": self.showMenu,
 			"yellowLite": self.showDetails,
 			"blueLite": self.showExtras,
@@ -273,26 +374,30 @@ class CSFDLite(Screen):
 			self.kontejnerfunguje = False
 		self.getCSFD()
 
-
+	def openSettings(self):
+		def refreshSettings(cb = None):
+			self.commentsSort = int(config.plugins.CSFDLite.commentsOrder.value)
+		try:
+			self.session.openWithCallback(refreshSettings, CSFDLiteConfigScreen)
+		except:
+			print("Open settings failed. %s"%traceback.format_exc())
+	
 	def najdi(self, retezec, celytext):
 		maska = re.compile(retezec, re.DOTALL)
 		vysledek = maska.findall(celytext)
 		vysledek = vysledek[0] if vysledek else ""
 		return vysledek
 
-
 	def hledejVse(self, retezec, celytext):
 		maska = re.compile(retezec, re.DOTALL)
 		vysledky = maska.findall(celytext)
 		return vysledky
-
 
 	def odstraneniTagu(self, upravovanytext):
 		self.htmltags = re.compile('<.*?>')
 		upravovanytext = self.htmltags.sub('', upravovanytext)
 		upravovanytext = upravovanytext.replace('&amp;', '&').replace('&nbsp;', ' ')
 		return upravovanytext
-
 
 	def rimskeArabske(self, vstupnirimska):
 		definicecislic = {'I':1, 'V':5, 'X':10, 'L':50, 'C':100, 'D':500, 'M':1000}
@@ -310,7 +415,6 @@ class CSFDLite(Screen):
 			return ""
 		else:
 			return str(arabska)
-
 
 	def rozlozeniNazvu(self, upravovanytext):
 		zbytecnosti = [" -HD", " -W", " -ST", " -AD"]
@@ -357,7 +461,6 @@ class CSFDLite(Screen):
 	
 		return kompletnazev, bserial, nazev1, nazev2  
 
-
 	def odstraneniInterpunkce(self, upravovanytext):
 		interpunkce = ',<.>/?;:"[{]}`~!@#$%^&*()-_=+|'
 		for znak in interpunkce:
@@ -365,16 +468,13 @@ class CSFDLite(Screen):
 		upravovanytext = upravovanytext.replace('   ', ' ').replace('  ', ' ')
 		return upravovanytext
 
-
 	def malaPismena(self, upravovanytext):
 		return toStr(upravovanytext).lower()
-
 
 	def adresaPredPresmerovanim(self, adresa):
 		opener = build_opener(HTTPRedirectHandler)
 		request = opener.open(adresa)
 		return request.url
-
 
 	def nactiKomentare(self, predanastranka):
 		vyslednytext = ""
@@ -394,11 +494,9 @@ class CSFDLite(Screen):
 			vyslednytext += autorkomentare + '    ' + hodnocenikomentare + '\n' + komentar + '\n' + datumkomentare + '\n\n'
 		return vyslednytext
 
-
 	def fetchFailed(self, kde):
 		print("[CSFDLite] fetch failed " + kde)
 		self["statusbar"].setText(toStr("Stále stahuji z CSFD: " + kde))
-
 
 	def resetLabels(self):
 		self["detailslabel"].setText("")
@@ -406,7 +504,6 @@ class CSFDLite(Screen):
 		self["titlelabel"].setText("")
 		self["extralabel"].setText("")
 		self.ratingstars = -1
-
 
 	def pageUp(self):
 		if self.Page == 0:
@@ -416,7 +513,6 @@ class CSFDLite(Screen):
 		if self.Page == 2:
 			self["extralabel"].pageUp()
 	
-
 	def pageDown(self):
 		if self.Page == 0:
 			self["menu"].instance.moveSelection(self["menu"].instance.moveDown)
@@ -424,7 +520,6 @@ class CSFDLite(Screen):
 			self["detailslabel"].pageDown()
 		if self.Page == 2:
 			self["extralabel"].pageDown()
-
 
 	def vlevo(self):
 		if self.Page == 0:
@@ -434,7 +529,6 @@ class CSFDLite(Screen):
 		if self.Page == 2:
 			self["extralabel"].pageUp()
 
-
 	def vpravo(self):
 		if self.Page == 0:
 			self["menu"].instance.moveSelection(self["menu"].instance.pageDown)
@@ -442,7 +536,6 @@ class CSFDLite(Screen):
 			self["detailslabel"].pageDown()
 		if self.Page == 2:
 			self["extralabel"].pageDown()
-
 
 	def showMenu(self):
 		if ( self.Page == 1 or self.Page == 2 ) and self.resultlist:
@@ -463,7 +556,6 @@ class CSFDLite(Screen):
 			self["key_yellow"].setText("Info o filmu")
 			self.Page = 0
 			
-
 	def showDetails(self):
 		self["ratinglabel"].show()
 		self["detailslabel"].show()
@@ -480,7 +572,9 @@ class CSFDLite(Screen):
 			fetchurl = "https://www.csfd.cz/film/" + self.link + "/recenze/?" + str(randint(1000, 9999))
 			if self.commentsSort == 1:
 				fetchurl = "https://www.csfd.cz/film/" + self.link + "/recenze/?sort=datetime_desc"
-			if self.commentsSort == 2:	
+			if self.commentsSort == 2:
+				fetchurl = "https://www.csfd.cz/film/" + self.link + "/recenze/?sort=datetime_asc"
+			if self.commentsSort == 3:	
 				fetchurl = "https://www.csfd.cz/film/" + self.link + "/recenze/?sort=rating"
 
 			print("[CSFDLite] downloading query " + fetchurl + " to " + localfile)
@@ -502,18 +596,6 @@ class CSFDLite(Screen):
 
 			self.Page = 1
 
-
-	def saveSorting(self):
-		try:
-			setattr(config.plugins.CSFDLite, "sort", ConfigSelection(default="1", choices=lst))
-			setting = getattr(config.plugins.CSFDLite, 'sort')
-			setting.setValue("%s"%self.commentsSort)
-			setting.save()
-			configfile.save()
-		except:
-			pass
-
-
 	def showExtras(self):
 		if self.Page == 1:
 			self["extralabel"].show()
@@ -523,21 +605,12 @@ class CSFDLite(Screen):
 			self["starsbg"].hide()
 			self["ratinglabel"].hide()
 			self.Page = 2
-		else:
-			self.commentsSort+=1
-			if self.commentsSort>2:
-				self.commentsSort=1
-			self.saveSorting()
-			msg = "Řazení komentářů: podle data sestupně" if self.commentsSort==1 else "Řazení komentářů: podle hodnocení"
-			self.session.open(MessageBox, text=toStr(msg), timeout=10, type=MessageBox.TYPE_INFO)
-
 
 	def openChannelSelection(self):
 		self.session.openWithCallback(
 			self.channelSelectionClosed,
 			CSFDChannelSelection
 		)
-
 
 	def channelSelectionClosed(self, ret = None, popis = ""):
 		if ret:
@@ -552,7 +625,6 @@ class CSFDLite(Screen):
 			self["stars"].hide()
 			self["starsbg"].hide()
 			self.getCSFD()
-
 
 	def getCSFD(self):
 		self.resetLabels()
@@ -609,7 +681,6 @@ class CSFDLite(Screen):
 		else:
 			self["statusbar"].setText(toStr("Nejde získat Eventname"))
 
-
 	def CSFDquery(self, string):
 		print("[CSFDquery]")
 		self["statusbar"].setText(toStr("Stahování z CSFD dokončeno pro %s" % (self.nazeveventuproskin)))
@@ -649,7 +720,6 @@ class CSFDLite(Screen):
 			print("[CSFDLite] Downloading Query " + fetchurl + " to " + localfile)
 			dwnpage(fetchurl,localfile).addCallback(self.CSFDquery_dotaz2).addErrback(self.fetchFailed("CSFDquery"))
 
-
 	def CSFDquery_dotaz2(self, string):			
 		print("[CSFDquery_dotaz2]")
 		self["statusbar"].setText(toStr("Stahování z CSFD dokončeno pro %s" % (self.nazeveventuproskin)))
@@ -685,7 +755,6 @@ class CSFDLite(Screen):
 		else:
 			self["detailslabel"].setText(toStr("Dotaz na CSFD nebyl úspěšný"))
 
-
 	def CSFDquery_dotaz3(self, string):			
 		print("[CSFDquery_dotaz3]")
 		self["statusbar"].setText(toStr("Stahování z CSFD dokončeno pro %s" % (self.nazeveventuproskin)))
@@ -711,7 +780,6 @@ class CSFDLite(Screen):
 			self.projitSeznam()
 		else:
 			self["detailslabel"].setText(toStr("Dotaz na CSFD nebyl úspěšný"))
-
 
 	def projitSeznam(self):	
 		print("[CSFDLite] prochazim seznam")
@@ -757,7 +825,6 @@ class CSFDLite(Screen):
 		except:
 			print("/////////// ERROR %s"%traceback.format_exc())
 
-
 	def CSFDquery2(self, string):
 		self["statusbar"].setText(toStr("Stahování informace o filmu dokončeno pro:  %s" % (self.nazevkomplet)))
 		self.inhtml = (open("/tmp/CSFDquery2.html", "r").read())
@@ -765,7 +832,6 @@ class CSFDLite(Screen):
 			self.CSFDparse()
 		else:
 			self["statusbar"].setText(toStr("Problem pri načítání: %s" % (self.link)))
-
 
 	def CSFDquery3(self, string):
 		self.inhtml2 = (open("/tmp/CSFDquery3.html", "r").read())
@@ -775,7 +841,6 @@ class CSFDLite(Screen):
 			self["statusbar"].setText(toStr("Problem pri načítání: %s" % (self.link2)))
 		self.zobrazKomentare(self.komentare2)
 
-
 	def zobrazKomentare(self, vsechnykomentare):
 		if vsechnykomentare != "":
 			vsechnykomentare = self.odstraneniTagu(vsechnykomentare)
@@ -783,12 +848,11 @@ class CSFDLite(Screen):
 				vsechnykomentare = vsechnykomentare[0:self.omezenikomentaru] + "...\n\n(seznam komentářů zkrácen)"
 			self["extralabel"].setText(toStr(vsechnykomentare))
 			self["extralabel"].hide()
-			razenikomentaru = "↓d"
-			if self.commentsSort == 2:
-				razenikomentaru = "↓h"
+			# razenikomentaru = "↓d"
+			# if self.commentsSort == 2:
+			# 	razenikomentaru = "↓h"
 				
-			self["key_blue"].setText(toStr("Komentáře " + razenikomentaru))		
-
+			self["key_blue"].setText(toStr("Komentáře")) # + razenikomentaru))		
 
 	def CSFDparse(self):
 		print("[CSFDparse]")
@@ -920,7 +984,6 @@ class CSFDLite(Screen):
 
 		self["detailslabel"].setText(toStr(Detailstext))
 
-
 	def CSFDPoster(self, noPoster = False):
 		self["statusbar"].setText(toStr("Info z CSFD získáno pro: %s" % (self.nazevkomplet)))
 		if not noPoster:
@@ -931,17 +994,14 @@ class CSFDLite(Screen):
 		self.picload.setPara((self["poster"].instance.size().width(), self["poster"].instance.size().height(), sc[0], sc[1], False, 1, "#00000000"))
 		self.picload.startDecode(filename)
 
-
 	def paintPosterPixmapCB(self, picInfo=None):
 		ptr = self.picload.getData()
 		if ptr is not None:
 			self["poster"].instance.setPixmap(ptr.__deref__())
 			self["poster"].show()
 
-
 	def createSummary(self):
 		return CSFDLCDScreen
-
 
 	def kontrolaUpdate(self):
 		naposledy = '/tmp/CSFDLite_last_update_check'
@@ -975,6 +1035,7 @@ class CSFDLite(Screen):
 			print("Remove diacritics '%s' failed.\n%s"%(text,traceback.format_exc()))
 			
 		return searchExp
+
 	def porovnaniVerze(self, string):
 		ver = StrictVersion('')
 		if (path.exists(self.cisloverze) and path.isfile(self.cisloverze) and access(self.cisloverze, R_OK)):
@@ -988,7 +1049,6 @@ class CSFDLite(Screen):
 			self.koncovkasouboru = 'csfdlite_%s.%s.tar.gz'%(ver.version[0],ver.version[1])
 			self.session.openWithCallback(self.provedeniUpdate, MessageBox, "Spustit aktualizaci pluginu CSFDLite na verzi " + str(ver) + "?", MessageBox.TYPE_YESNO)
 
-
 	def provedeniUpdate(self, odpoved):
 		if odpoved:
 			if self.kontejnerfunguje:
@@ -996,11 +1056,9 @@ class CSFDLite(Screen):
 			else:
 				self.session.open(MessageBox, toStr("Nainstalovaná verze enigmy nemá objekt eConsoleAppContainer, aktualizujte plugin ručně"), MessageBox.TYPE_INFO, timeout=60)
 
-
 	def rozbaleniTaru(self, string):
 		if self.container.execute('tar xvf /tmp/CSFDLite.tar.gz -C /usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/'):
 			self.session.open(MessageBox, toStr("Problém s prováděním příkazu v containeru, aktualizace neproběhla"), MessageBox.TYPE_INFO, timeout=30)
-
 
 	def konecExekuce(self, exitcode):
 		if exitcode == 0:
@@ -1013,12 +1071,10 @@ class CSFDLite(Screen):
 		else:
 			self.session.open(MessageBox, toStr("Problém s aktualizací, neexistuje tar nebo se špatně stáhl soubor"), MessageBox.TYPE_INFO, timeout=30)
 
-
 	def __onClose(self):
 		del self.picload_conn
 		del self.picload
 		self.close()
-
 
 class CSFDLCDScreen(Screen):
 	skin = """
@@ -1029,16 +1085,12 @@ class CSFDLCDScreen(Screen):
 		Screen.__init__(self, session)
 		self["headline"] = Label("CSFD Lite")
 
-
 # try replace IMDB plugin with this
-#@todo add to settings
 replaceImdb()
-
 
 def eventinfo(session, servicelist, **kwargs):
 	ref = session.nav.getCurrentlyPlayingServiceReference()
 	session.open(CSFDEPGSelection, ref)
-
 
 def movielist(session, service, **kwargs):
 	serviceHandler = eServiceCenter.getInstance()
@@ -1048,10 +1100,8 @@ def movielist(session, service, **kwargs):
 	eventName = name.split(".")[0].strip()
 	session.open(CSFDLite, eventName, popis)
 
-
 def main(session, eventName="", popis = "", **kwargs):
 	session.open(CSFDLite, eventName, popis)
-
 
 def Plugins(**kwargs):
 	try:
