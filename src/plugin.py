@@ -2,7 +2,7 @@
 #####################################
 # CSFD Lite by origin from mik9
 #####################################
-PLUGIN_VERSION = "1.0"
+PLUGIN_VERSION = "1.2"
 
 ############## @TODOs
 # - lokalizacia cz, sk, en
@@ -298,12 +298,14 @@ class CSFDLite(Screen):
 	#def __init__(self, session, eventName='', callbackNeeded=False, predanypopis='',sourceEPG=False, DVBchannel='', *args, **kwargs):
 	def __init__(self, session, eventName, predanypopis='', args=None):
 		settingskin = config.plugins.CSFDLite.skin.value
+		self.omezenikomentaru = 500000
+		self.omezeninazvu = 100 if 'FullHD' in settingskin else 70
 		if settingskin == 'auto':
 			self.sirkadispleje = getDesktop(0).size().width()
 			if getDesktop(0).size().width() > 1800:
 				try:
 					from enigma import eMediaDatabase
-					self.skinfile = "/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/skinFullHD2.xml"	
+					self.skinfile = "/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/skinFullHD_dreambox.xml"	
 				except:
 					self.skinfile = "/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/skinFullHD.xml"
 				self.omezenikomentaru = 500000
@@ -314,6 +316,9 @@ class CSFDLite(Screen):
 				self.omezeninazvu = 70
 		else:
 			self.skinfile = path.join(SKIN_PATH, settingskin)
+
+		if not path.isfile(self.skinfile): # fallback
+			self.skinfile = '/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/skinHD.xml'
 
 		skinsoubor = open(self.skinfile)
 		self.skin = skinsoubor.read()
