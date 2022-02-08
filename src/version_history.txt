@@ -1,4 +1,8 @@
-﻿verzia 1.2 - 25.01.2022
+﻿verzia 1.3 - 08.02.2022
+- oprava vyhladavania
+- pridane radenie komentarov podla bodov uzivatelov
+
+verzia 1.2 - 25.01.2022
 - oprava nacitavania pri volbe ineho skinu ako aktualizaciou
 - oprava hviezdiciek
 - ako fallback sa nastavi skinHD.xml

@@ -2,7 +2,7 @@
 #####################################
 # CSFD Lite by origin from mik9
 #####################################
-PLUGIN_VERSION = "1.2"
+PLUGIN_VERSION = "1.3"
 
 ############## @TODOs
 # - lokalizacia cz, sk, en
@@ -35,11 +35,12 @@ import sys
 from os import path, access, R_OK, remove, listdir
 import time
 try:
-	from urllib import quote
+	from urllib import quote, unquote
 	from urllib2 import build_opener, HTTPRedirectHandler
 except:
 	from urllib.request import build_opener, HTTPRedirectHandler
-	from urllib.parse import quote
+	from urllib.parse import quote, unquote
+	
 
 ####################### SETTINGS
 config.plugins.CSFDLite = ConfigSubsection()
@@ -47,7 +48,7 @@ SKIN_PATH = path.join(resolveFilename(SCOPE_PLUGINS), 'Extensions/CSFDLite')
 skinChoices = [(fname, path.splitext(fname)[0].replace('skin','').replace('_','')) for fname in listdir(SKIN_PATH) if fname.startswith('skin') and fname.endswith('.xml') ]
 skinChoices.insert(0,'auto')
 config.plugins.CSFDLite.skin = ConfigSelection(default="auto", choices=skinChoices)
-order = [('1', 'Podľa dátumu zostupne'), ('2', 'Podľa dátumu vzostupne'), ('3', 'Podľa hodnotenia')]
+order = [('1', 'Podľa dátumu zostupne'), ('2', 'Podľa dátumu vzostupne'), ('3', 'Podľa hodnotenia'), ('4', 'Podľa bodov')]
 config.plugins.CSFDLite.commentsOrder = ConfigSelection(default="1", choices=order)
 config.plugins.CSFDLite.replaceImdb = ConfigYesNo(default=False)
 ####################### SETTINGS
@@ -80,7 +81,6 @@ def eConnectCallback(obj, callbackFun):
 		return eConnectCallbackObj(obj, callbackFun)
 	return eConnectCallbackObj()
 
-
 def replaceImdb():
 	try:
 		if config.plugins.CSFDLite.replaceImdb.value:
@@ -97,13 +97,8 @@ def replaceImdb():
 	except:
 		print('[CSFDLite] Imdb replace failed. %s'%traceback.format_exc())
 
-
 def dwnpage(a, b):
 	return downloadPage(a.encode('utf-8'), b) if sys.version_info[0] == 3 else downloadPage(a, b)
-	# 	return downloadPage(a, b)
-	# except:
-	# 	return 
-
 
 def toStr(a):
 	try:
@@ -132,7 +127,7 @@ def norm(text):
 										if unicodedata.category(c) != 'Mn'))
 		else:
 			if isinstance(exp, str):
-				return exp
+				exp = exp.decode('utf-8')
 			import unicodedata
 			exp = ''.join((c for c in unicodedata.normalize('NFD', exp) 
 										if unicodedata.category(c) != 'Mn')).encode('utf-8')
@@ -349,7 +344,7 @@ class CSFDLite(Screen):
 		self["key_blue"] = Button("")
 		self.commentsSort = 1
 		try:
-			self.commentsSort = int(config.plugins.CSFDLite.commentsOrder.value) # 1- date_desc, 2- date_asc, 3- rating 
+			self.commentsSort = int(config.plugins.CSFDLite.commentsOrder.value) # 1- date_desc, 2- date_asc, 3- rating, 4- points
 		except:
 			pass
 		# 0 = multiple query selection menu page
@@ -581,6 +576,8 @@ class CSFDLite(Screen):
 				fetchurl = "https://www.csfd.cz/film/" + self.link + "/recenze/?sort=datetime_asc"
 			if self.commentsSort == 3:	
 				fetchurl = "https://www.csfd.cz/film/" + self.link + "/recenze/?sort=rating"
+			if self.commentsSort == 4:	
+				fetchurl = "https://www.csfd.cz/film/" + self.link + "/recenze/?sort=points"
 
 			print("[CSFDLite] downloading query " + fetchurl + " to " + localfile)
 			dwnpage(fetchurl,localfile).addCallback(self.CSFDquery2).addErrback(self.fetchFailed("showDetails"))
@@ -651,13 +648,15 @@ class CSFDLite(Screen):
 			self.rokEPG = ''
 
 		if self.eventName != "":
-			self.nazeveventuproskin = self.eventName
+			self.nazeveventuproskin = toStr(self.eventName)
 			try:
 				self.eventName = quote(self.eventName)
 			except:
-				self.eventName = quote(self.eventName.decode('utf8').encode('ascii','ignore'))
+				self.eventName = quote(self.eventName.decode('utf-8').encode('ascii','ignore'))
+
 
 			self.nazeveventu = self.eventName
+			#print('///////////////BEFORE nazeveventu(rok=%s)=%s'%(self.rokEPG, self.nazeveventu))
 			jineznaky = list(set(self.hledejVse('(%[0-9A-F][0-9A-F])', self.nazeveventu)))
 			for jinyznak in jineznaky:
 				desitkove = int(jinyznak[1:3], 16)
@@ -666,11 +665,13 @@ class CSFDLite(Screen):
 				elif desitkove > 127:
 					self.nazeveventu = self.nazeveventu.replace(jinyznak, jinyznak.lower())
 			self.nazeveventu = self.nazeveventu.replace('%', '\\x')
+			#print('///////////////AFTER nazeveventu=%s'%self.nazeveventu)
 
 			self.celejmeno, self.je_serial, self.jmeno1, self.jmeno2 = self.rozlozeniNazvu(self.nazeveventu)
-			dotaz1 = norm(self.celejmeno)
+			dotaz1 = self.celejmeno
 			if not self.je_serial:
 				dotaz1+= "%20" + self.rokEPG
+			#print('///////////////AFTER dotaz1=%s'%dotaz1)
 			
 			dotaz1 = dotaz1.replace(" ", "%20").replace('\\x', "%")
 			self.jmeno1 = self.jmeno1.replace(" ", "%20").replace('\\x', "%")
@@ -680,7 +681,6 @@ class CSFDLite(Screen):
 			localfile = "/tmp/CSFDquery.html"
 			fetchurl = "https://www.csfd.cz/hledat/?q=" + dotaz1
 			self.puvodniurl = fetchurl
-			open(localfile, 'w').close()
 			print("[CSFDLite] Downloading Query " + fetchurl + " to " + localfile)
 			dwnpage(fetchurl,localfile).addCallback(self.CSFDquery).addErrback(self.CSFDquery)
 		else:
@@ -792,14 +792,10 @@ class CSFDLite(Screen):
 			self.resultlist = sorted(set(self.resultlist), key=self.resultlist.index)   # odstraneni duplicit v seznamu
 			shoda = []
 			for nazevinfo, odkaz, nazevfilmu, rok in self.resultlist:
-				nazevfilmu = self.odstraneniTagu(nazevfilmu)
-				konvertovanynazev = self.removeD(nazevfilmu)
-				# for znak in nazevfilmu:
-				# 	if ord(znak) > 127:
-				# 		znak = "\\x" + znak.encode("hex")
-				# 	konvertovanynazev += znak
-				if self.malaPismena(self.odstraneniInterpunkce(konvertovanynazev)) == self.malaPismena(self.odstraneniInterpunkce(self.nazeveventu)):
-					shoda += [(self.odstraneniTagu(nazevinfo), odkaz, rok)]
+				if norm(nazevfilmu) == norm(unquote(self.eventName)):
+					shoda += [(nazevinfo, odkaz, rok)]
+				elif norm(unquote(self.eventName)).startswith(norm(nazevfilmu)):
+					shoda += [(nazevinfo, odkaz, rok)]
 			if len(shoda) == 1:
 				self.nazevkomplet, self.link, v3 = shoda[0]
 				self.unikatni = True
@@ -1022,24 +1018,6 @@ class CSFDLite(Screen):
 			open(naposledy, 'w').close()
 			self.cisloverze = '/tmp/nova_verze.txt'
 			dwnpage('https://raw.githubusercontent.com/skyjet18/enigma2-plugin-extensions-csfdlite/master/version.txt', self.cisloverze).addCallback(self.porovnaniVerze).addErrback(self.fetchFailed("kontrolaUpdate"))
-
-	def removeD(self, text):
-		searchExp = text
-		try:
-			if sys.version_info >= (3, 0, 0):
-				import unicodedata
-				searchExp = ''.join((c for c in unicodedata.normalize('NFD', searchExp) 
-											if unicodedata.category(c) != 'Mn'))
-			else:
-				if isinstance(searchExp, str):
-					return searchExp
-				import unicodedata
-				searchExp = ''.join((c for c in unicodedata.normalize('NFD', searchExp) 
-											if unicodedata.category(c) != 'Mn')).encode('utf-8')
-		except:
-			print("Remove diacritics '%s' failed.\n%s"%(text,traceback.format_exc()))
-			
-		return searchExp
 
 	def porovnaniVerze(self, string):
 		ver = StrictVersion('')
