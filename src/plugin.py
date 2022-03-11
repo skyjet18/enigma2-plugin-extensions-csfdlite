@@ -2,7 +2,7 @@
 #####################################
 # CSFD Lite by origin from mik9
 #####################################
-PLUGIN_VERSION = "1.3"
+PLUGIN_VERSION = "1.4"
 
 ############## @TODOs
 # - lokalizacia cz, sk, en
@@ -871,7 +871,7 @@ class CSFDLite(Screen):
 				nazevfilmu = nazevfilmu[0:self.omezeninazvu] + "..."
 			self["titlelabel"].setText(nazevfilmu)
 
-			hodnoceni = self.najdi('<div class="rating-average.*?">\s+(.*?)</div>', self.inhtml)
+			hodnoceni = self.najdi('<div class="film-rating-average.*?">\s+(.*?)</div>', self.inhtml)
 			Ratingtext = "--"
 			if hodnoceni != "" and not "?" in hodnoceni:
 				Ratingtext = hodnoceni.strip()
@@ -1044,15 +1044,25 @@ class CSFDLite(Screen):
 			self.session.open(MessageBox, toStr("Problém s prováděním příkazu v containeru, aktualizace neproběhla"), MessageBox.TYPE_INFO, timeout=30)
 
 	def konecExekuce(self, exitcode):
+		def restart_e2(callback=None):
+			try:
+				from Screens.Standby import TryQuitMainloop
+				if callback:
+					from Screens.Standby import TryQuitMainloop
+					self.session.open(TryQuitMainloop, 3)
+				else:
+					self.close(True)
+			except:
+				self.close(True)
 		if exitcode == 0:
 			try:
 				zmeny = (open("/usr/lib/enigma2/python/Plugins/Extensions/CSFDLite/version_history.txt", "r").read())
 				zmeny = self.najdi('^(.*?)\n[0-9]?[0-9].[0-9]?[0-9]', zmeny)
 			except: 
 				zmeny = ""
-			self.session.open(MessageBox, toStr("Aktualizace proběhla, restartujte enigmu. Změny v poslední verzi:\n\n") + zmeny, MessageBox.TYPE_INFO, timeout=30)
+			self.session.openWithCallback(restart_e2, MessageBox, toStr("Aktualizace proběhla na verzi: %s\n\nChcete reštartovať teraz?")%zmeny, type=MessageBox.TYPE_YESNO)			
 		else:
-			self.session.open(MessageBox, toStr("Problém s aktualizací, neexistuje tar nebo se špatně stáhl soubor"), MessageBox.TYPE_INFO, timeout=30)
+			self.session.open(MessageBox, toStr("Problém s aktualizací, neexistuje tar nebo se špatně stáhl soubor."), MessageBox.TYPE_INFO, timeout=30)
 
 	def __onClose(self):
 		del self.picload_conn
