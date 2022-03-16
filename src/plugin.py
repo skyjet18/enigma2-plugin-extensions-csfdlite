@@ -2,7 +2,7 @@
 #####################################
 # CSFD Lite by origin from mik9
 #####################################
-PLUGIN_VERSION = "1.4"
+PLUGIN_VERSION = "1.5"
 
 ############## @TODOs
 # - lokalizacia cz, sk, en
@@ -27,7 +27,6 @@ from Components.ProgressBar import ProgressBar
 from Components.ConfigList import ConfigListScreen
 from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS
 from Components.config import config, ConfigSubsection, ConfigSelection, configfile, ConfigYesNo, getConfigListEntry
-from distutils.version import StrictVersion
 import traceback
 import re
 from random import *
@@ -134,6 +133,35 @@ def norm(text):
 	except:
 		pass
 	return exp
+
+class StrictVersion(object):
+	def __init__(self, strVer):
+		if strVer:
+			ver = strVer.split('.')
+			self.major = int(ver[0])
+			self.minor = int(ver[1])
+			self.patch = int(ver[2])
+		else:
+			self.major = 0
+			self.minor = 0
+			self.patch = 0
+		self.version = [self.major, self.minor, self.patch]
+	def __lt__(self, b):
+		if self.major < b.major: return True
+		if self.minor < b.minor: return True
+		if self.patch < b.patch: return True
+		return False
+	def __eq__(self, b):
+		return self.major==b.major and self.minor==b.minor and self.patch==b.patch
+	def __ne__(self, b):
+		return self.major!=b.major or self.minor!=b.minor or self.patch!=b.patch
+	def __gt__(self, b):
+		if self.major > b.major: return True
+		if self.minor > b.minor: return True
+		if self.patch > b.patch: return True
+		return False
+	def __str__(self):
+		return '%s.%s.%s'%(self.major, self.minor, self.patch)
 
 class CSFDLiteConfigScreen(Screen, ConfigListScreen):
 	def __init__(self, session):

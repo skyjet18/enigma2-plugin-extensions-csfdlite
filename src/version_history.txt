@@ -1,4 +1,7 @@
-﻿verzia 1.4 - 11.03.2022
+﻿verzia 1.5 - 16.03.2022
+- odstranenie referencie na distutils
+
+verzia 1.4 - 11.03.2022
 - po aktualizacii sa ponukne moznost restartovat pristroj (GUI)
 - oprava zobrazovania hodnotenia
 
