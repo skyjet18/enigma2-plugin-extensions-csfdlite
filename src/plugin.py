@@ -140,7 +140,7 @@ class StrictVersion(object):
 			ver = strVer.split('.')
 			self.major = int(ver[0])
 			self.minor = int(ver[1])
-			self.patch = int(ver[2])
+			self.patch = int(ver[2]) if len(ver) > 2 else 0
 		else:
 			self.major = 0
 			self.minor = 0
@@ -161,6 +161,8 @@ class StrictVersion(object):
 		if self.patch > b.patch: return True
 		return False
 	def __str__(self):
+		if self.patch == 0:
+			return '%s.%s'%(self.major, self.minor)
 		return '%s.%s.%s'%(self.major, self.minor, self.patch)
 
 class CSFDLiteConfigScreen(Screen, ConfigListScreen):
