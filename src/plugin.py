@@ -2,7 +2,7 @@
 #####################################
 # CSFD Lite by origin from mik9
 #####################################
-PLUGIN_VERSION = "1.5"
+PLUGIN_VERSION = "1.6"
 
 ############## @TODOs
 # - lokalizacia cz, sk, en
@@ -969,18 +969,21 @@ class CSFDLite(Screen):
 					Detailstext += termin + '      '
 				Detailstext += '\n\n'
 
-			obory = ['Re\xc5\xbeie', 'P\xc5\x99edloha', 'Sc\xc3\xa9n\xc3\xa1\xc5\x99', 'Kamera','Hudba', 'Hraj\xc3\xad']
+			obory = ['Re\xc5\xbeie', 'P\xc5\x99edloha', 'Sc\xc3\xa9n\xc3\xa1\xc5\x99', 'Kamera','Hudba', 'Hraj\xc3\xad', 'Režie', 'Předloha', 'Scénář', 'Zvuk', 'Střih', 'Hrají']
 			oborytext = ""
 			for obor in obory:
-				jmena = self.najdi('<h4>' + obor + ': </h4>(.*?)</div>', self.inhtml)
-				autori = ""
-				for tvurce in self.hledejVse('<a href=".*?">(.*?)</a>', jmena):
-					autori += tvurce + ", "
-				if autori != "":
-					autori = autori[0:len(autori)-2]
-					if obor == 'Hrají':
-						oborytext += '\n'	
-					oborytext += obor + ': ' + autori + '\n'
+				try:
+					jmena = self.najdi('<h4>' + obor + ':.*?</h4>(.*?)</div>', self.inhtml)
+					autori = ""
+					for tvurce in self.hledejVse('<a href=".*?">(.*?)</a>', jmena):
+						autori += tvurce + ", "
+					if autori != "":
+						autori = autori[0:len(autori)-2]
+						if obor == 'Hrají':
+							oborytext += '\n'	
+						oborytext += obor + ': ' + autori + '\n'
+				except:
+					pass
 			Detailstext += oborytext
 			if oborytext != "":
 				Detailstext += '\n'
