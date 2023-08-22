@@ -1,4 +1,7 @@
-﻿verzia 1.6 - 28.04.2023
+﻿verzia 1.7 - 22.08.2023
+- oprava nacitavania zoznamu
+
+verzia 1.6 - 28.04.2023
 - oprava nacitavania dodatocnych informacii (thanks @chocholousek)
 
 verzia 1.5 - 16.03.2022
