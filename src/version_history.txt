@@ -1,4 +1,7 @@
-﻿verzia 1.7 - 22.08.2023
+verzia 1.8 - 19.01.2024
+- oprava zobrazovania zanrov
+
+verzia 1.7 - 22.08.2023
 - oprava nacitavania zoznamu
 
 verzia 1.6 - 28.04.2023

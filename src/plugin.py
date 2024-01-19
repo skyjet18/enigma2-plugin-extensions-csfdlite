@@ -2,7 +2,7 @@
 #####################################
 # CSFD Lite by origin from mik9
 #####################################
-PLUGIN_VERSION = "1.7"
+PLUGIN_VERSION = "1.8"
 
 ############## @TODOs
 # - lokalizacia cz, sk, en
@@ -986,7 +986,7 @@ class CSFDLite(Screen):
                     Detailstext += nazev + '\n'
                 Detailstext += '\n'
 
-            zanr = self.najdi('<div class="genres">(.*?)</div>', self.inhtml)
+            zanr = self.odstraneniTagu(self.najdi('<div class="genres">(.*?)</div>', self.inhtml))
             Detailstext += zanr + '\n'
 
             zemerokdelka = self.najdi('<div class="origin">(.*?)</div>', self.inhtml)
