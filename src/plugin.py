@@ -2,7 +2,7 @@
 #####################################
 # CSFD Lite by origin from mik9
 #####################################
-PLUGIN_VERSION = "1.9"
+PLUGIN_VERSION = "2.0"
 
 ############## @TODOs
 # - lokalizacia cz, sk, en
@@ -11,6 +11,7 @@ PLUGIN_VERSION = "1.9"
 
 from Plugins.Plugin import PluginDescriptor
 from twisted.web.client import downloadPage
+from twisted.internet.threads import deferToThread
 from enigma import ePicLoad, eServiceReference, eServiceCenter, getDesktop, iServiceInformation, eConsoleAppContainer
 from Screens.Screen import Screen
 from Screens.EpgSelection import EPGSelection
@@ -39,6 +40,11 @@ try:
 except:
     from urllib.request import build_opener, HTTPRedirectHandler
     from urllib.parse import quote, unquote
+try:
+    from requests import get
+except:
+    def get(url, params=None, **kwargs):
+        raise Exception("please install requests library: opkg install python-requests")
     
 
 ####################### SETTINGS
@@ -97,15 +103,46 @@ def replaceImdb():
         print('[CSFDLite] Imdb replace failed. %s'%traceback.format_exc())
 
 def dwnpage(a, b):
-    # h = {
-    # 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0',
-    # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-    # 'Accept-Language': 'sk,cs;q=0.8,en-US;q=0.5,en;q=0.3',
-    # 'Accept-Encoding': 'gzip, deflate, br'
-    # }
     return downloadPage(a.encode('utf-8'), b) if sys.version_info >= (3, 0, 0) else downloadPage(a, b)
-    #downloadPage(fetchurl.encode('utf-8'),localfile).addCallback(self.CSFDquery2).addErrback(self.fetchFailed)
-    #return downloadPage(a.encode('utf-8'), b, headers=h) if sys.version_info[0] == 3 else downloadPage(a, b, headers=h)
+
+def _load_url_sync(url, out_file, headers=None, timeout=20, verify_ssl=False):
+    r = get(url, headers=headers or {}, timeout=timeout, verify=verify_ssl)
+    r.raise_for_status()
+    with open(out_file, "wb") as f:
+        f.write(r.content)
+    return r.text
+
+def dwnpageNew(a, b, cbOk, cbErr):
+    csfdHdrs = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br, zstd',
+                'Sec-GPC': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Priority': 'u=0, i'
+            }
+    d = deferToThread(_load_url_sync, a, b, csfdHdrs, 20, False)
+    if cbOk or cbErr:
+        def _ok(text):
+            if cbOk:
+                cbOk(text)
+            return text
+        def _err(failure):
+            msg = failure.getErrorMessage()
+            if cbErr:
+                print("[CSFDLite] Download content failed %s"%msg)
+                cbErr("Download content failed")
+            return failure
+
+        d.addCallbacks(_ok, _err)
+
+    return d
 
 def toStr(a):
     try:
@@ -160,7 +197,7 @@ class StrictVersion(object):
     def __ge__(self, b):
         return self.__gt__(b) or self.__eq__(b)
     def __lt__(self, b):
-        if self.major < b.major: return True
+        if self.major > b.major: return False
         if self.minor < b.minor: return True
         if self.patch < b.patch: return True
         return False
@@ -169,7 +206,7 @@ class StrictVersion(object):
     def __ne__(self, b):
         return self.major!=b.major or self.minor!=b.minor or self.patch!=b.patch
     def __gt__(self, b):
-        if self.major > b.major: return True
+        if self.major < b.major: return False
         if self.minor > b.minor: return True
         if self.patch > b.patch: return True
         return False
@@ -539,7 +576,7 @@ class CSFDLite(Screen):
 
     def fetchFailed(self, string):
         print("[CSFDLite] fetch failed %s"%string)
-        self["statusbar"].setText(toStr("Stále stahuji z CSFD: " + string))
+        self["statusbar"].setText(toStr(string))
 
     def resetLabels(self):
         self["detailslabel"].setText("")
@@ -624,7 +661,7 @@ class CSFDLite(Screen):
                 fetchurl = "https://www.csfd.cz/film/" + self.link.replace('/prehled/','') + "/recenze/?sort=points"
 
             print("[CSFDLite] downloading query " + fetchurl + " to " + localfile)
-            dwnpage(fetchurl,localfile).addCallback(self.CSFDquery2).addErrback(self.fetchFailed)
+            dwnpageNew(fetchurl, localfile, self.CSFDquery2, self.fetchFailed)
             self["menu"].hide()
             self.resetLabels()
             self.setTitle(self.nazevkomplet + " - CSFD Lite v. " + str(self.version))
@@ -739,7 +776,7 @@ class CSFDLite(Screen):
             fetchurl = "https://www.csfd.cz/hledat/?q=" + dotaz1
             self.puvodniurl = fetchurl
             print("[CSFDLite] Downloading Query " + fetchurl + " to " + localfile)
-            dwnpage(fetchurl,localfile).addCallback(self.CSFDquery).addErrback(self.CSFDquery)
+            dwnpageNew(fetchurl, localfile, self.CSFDquery, self.CSFDquery)
         else:
             self["statusbar"].setText(toStr("Nejde získat Eventname"))
 
@@ -817,7 +854,7 @@ class CSFDLite(Screen):
                 fetchurl = "https://www.csfd.cz/hledat/?q=" + self.jmeno2
                 self.puvodniurl = fetchurl
                 print("[CSFDLite] Downloading Query " + fetchurl + " to " + localfile)
-                dwnpage(fetchurl,localfile).addCallback(self.CSFDquery_dotaz3).addErrback(self.fetchFailed)
+                dwnpageNew(fetchurl, localfile, self.CSFDquery_dotaz3, self.fetchFailed)
             else:
                 self.projitSeznam()
         else:
@@ -956,16 +993,16 @@ class CSFDLite(Screen):
                     localfile = "/tmp/poster.jpg"
                     print("[CSFDLite] downloading poster " + posterurl + " to " + localfile)
                     try:
-                        dwnpage(posterurl,localfile).addCallback(self.CSFDPoster).addErrback(self.fetchFailed)
+                        dwnpageNew(posterurl, localfile, self.CSFDPoster, self.fetchFailed)
                     except:
                         print("no jpg poster!")
-                        self.CSFDPoster(noPoster = True)					
+                        self.CSFDPoster(None)
                 else:
                     print("no jpg poster!")
-                    self.CSFDPoster(noPoster = True)
+                    self.CSFDPoster(None)
             else:
                 print("no jpg poster!")
-                self.CSFDPoster(noPoster = True)
+                self.CSFDPoster(None)
 
             Detailstext = ""
             nazevserialu = serie = ''
@@ -1045,15 +1082,15 @@ class CSFDLite(Screen):
                 localfile = "/tmp/CSFDquery3.html"
                 fetchurl = "https://www.csfd.cz" + self.link2
                 print("[CSFDLite] downloading query " + fetchurl + " to " + localfile)
-                dwnpage(fetchurl,localfile).addCallback(self.CSFDquery3).addErrback(self.fetchFailed)
+                dwnpageNew(fetchurl, localfile, self.CSFDquery3, self.fetchFailed)
             else:
                 self.zobrazKomentare(Extratext)
 
         self["detailslabel"].setText(toStr(Detailstext))
 
-    def CSFDPoster(self, noPoster = False):
+    def CSFDPoster(self, posterData = None):
         self["statusbar"].setText(toStr("Info z CSFD získáno pro: %s" % (self.nazevkomplet)))
-        if not noPoster:
+        if posterData and path.isfile("/tmp/poster.jpg"):
             filename = "/tmp/poster.jpg"
         else:
             filename = resolveFilename(SCOPE_PLUGINS, "Extensions/CSFDLite/no_poster.png")

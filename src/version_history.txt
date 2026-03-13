@@ -1,3 +1,7 @@
+verzia 2.0 - 13.03.2026
+- oprava nacitavania info o filme a obrazkov
+- oprava kontroly aktualizacie
+
 verzia 1.9 - 13.11.2025
 - oprava nacitavania info o filme
 
