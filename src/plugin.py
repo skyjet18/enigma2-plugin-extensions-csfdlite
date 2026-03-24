@@ -112,7 +112,7 @@ def _load_url_sync(url, out_file, headers=None, timeout=20, verify_ssl=False):
         for chunk in r.iter_content(chunk_size=64 * 1024):
             if chunk:
                 f.write(chunk)
-    return r.text
+    return 'not_in_use'
 
 def _dwnpageFallback(a, b, cbOk, cbErr, headers):
     def download_page(url, out_file, cbOk, cbErr, headers=None, timeout=20, verify_ssl=False):
