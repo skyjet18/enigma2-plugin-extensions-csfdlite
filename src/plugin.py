@@ -106,21 +106,25 @@ def dwnpage(a, b):
     return downloadPage(a.encode('utf-8'), b) if sys.version_info >= (3, 0, 0) else downloadPage(a, b)
 
 def _load_url_sync(url, out_file, headers=None, timeout=20, verify_ssl=False):
-    r = get(url, headers=headers or {}, timeout=timeout, verify=verify_ssl)
+    r = get(url, headers=headers or {}, timeout=timeout, verify=verify_ssl, stream=True)
     r.raise_for_status()
     with open(out_file, "wb") as f:
-        f.write(r.content)
+        for chunk in r.iter_content(chunk_size=64 * 1024):
+            if chunk:
+                f.write(chunk)
     return r.text
 
 def _dwnpageFallback(a, b, cbOk, cbErr, headers):
     def download_page(url, out_file, cbOk, cbErr, headers=None, timeout=20, verify_ssl=False):
         try:
-            r = get(url, headers=headers or {}, timeout=timeout, verify=verify_ssl)
+            r = get(url, headers=headers or {}, timeout=timeout, verify=verify_ssl, stream=True)
             r.raise_for_status()
             with open(out_file, "wb") as f:
-                f.write(r.content)
+                for chunk in r.iter_content(chunk_size=64 * 1024):
+                    if chunk:
+                        f.write(chunk)
             if cbOk:
-                cbOk(r.text)
+                cbOk("not_in_use")
         except:
             print("\n\n[CSFDLite] download_page FAILED _dwnpageFallback=%s\n\n"%url)
             print(traceback.format_exc())
