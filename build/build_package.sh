@@ -36,7 +36,7 @@ mkdir -p ${PLUGINPATH}
 cp -rp ../src/* ${PLUGINPATH}
 tar -C . -czf data.tar.gz .
 tar -C ../build/control -czf control.tar.gz .
-cat "2.0" > debian-binary
+echo "2.0" > debian-binary
 
 ls -la
 ar -r ${PKG_NAME}.ipk ./debian-binary ./control.tar.gz ./data.tar.gz

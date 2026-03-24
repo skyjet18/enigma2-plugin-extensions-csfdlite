@@ -2,7 +2,7 @@
 #####################################
 # CSFD Lite by origin from mik9
 #####################################
-PLUGIN_VERSION = "2.0"
+PLUGIN_VERSION = "2.1"
 
 ############## @TODOs
 # - lokalizacia cz, sk, en
@@ -112,6 +112,30 @@ def _load_url_sync(url, out_file, headers=None, timeout=20, verify_ssl=False):
         f.write(r.content)
     return r.text
 
+def _dwnpageFallback(a, b, cbOk, cbErr, headers):
+    def download_page(url, out_file, cbOk, cbErr, headers=None, timeout=20, verify_ssl=False):
+        try:
+            r = get(url, headers=headers or {}, timeout=timeout, verify=verify_ssl)
+            r.raise_for_status()
+            with open(out_file, "wb") as f:
+                f.write(r.content)
+            if cbOk:
+                cbOk(r.text)
+        except:
+            print("\n\n[CSFDLite] download_page FAILED _dwnpageFallback=%s\n\n"%url)
+            print(traceback.format_exc())
+            if cbErr:
+                cbErr("Download content failed")
+    try:
+        from threading import Thread
+        Thread(target=download_page, args=(a, b, cbOk, cbErr), kwargs={'headers': headers, 'timeout': 20, 'verify_ssl': False}).start()
+    except Exception as e:
+        print("\n\n[CSFDLite] FAILED _dwnpageFallback=%s\n\n"%a)
+        print(traceback.format_exc())
+        if cbErr:
+            cbErr(str(e))
+    return None
+
 def dwnpageNew(a, b, cbOk, cbErr):
     csfdHdrs = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0',
@@ -127,7 +151,24 @@ def dwnpageNew(a, b, cbOk, cbErr):
                 'Sec-Fetch-User': '?1',
                 'Priority': 'u=0, i'
             }
-    d = deferToThread(_load_url_sync, a, b, csfdHdrs, 20, False)
+    try:
+        from twisted.internet import reactor
+        hasThreadPool = hasattr(reactor, 'getThreadPool')
+    except Exception:
+        hasThreadPool = False
+
+    if not hasThreadPool:
+        print("[CSFDLite] Reactor has no getThreadPool; using fallback downloader")
+        _dwnpageFallback(a, b, cbOk, cbErr, csfdHdrs)
+        return None
+
+    try:
+        d = deferToThread(_load_url_sync, a, b, csfdHdrs, 20, False)
+    except AttributeError:
+        print("[CSFDLite] deferToThread unavailable on current reactor; using fallback downloader")
+        _dwnpageFallback(a, b, cbOk, cbErr, csfdHdrs)
+        return None
+
     if cbOk or cbErr:
         def _ok(text):
             if cbOk:
