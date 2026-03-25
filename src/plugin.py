@@ -14,6 +14,7 @@ from twisted.web.client import downloadPage
 from twisted.internet.threads import deferToThread
 from enigma import ePicLoad, eServiceReference, eServiceCenter, getDesktop, iServiceInformation, eConsoleAppContainer
 from Screens.Screen import Screen
+from Screens.Console import Console
 from Screens.EpgSelection import EPGSelection
 from Screens.ChannelSelection import SimpleChannelSelection
 from Screens.MessageBox import MessageBox
@@ -32,6 +33,7 @@ import traceback
 import re
 from random import *
 import sys
+import os
 from os import path, access, R_OK, remove, listdir
 import time
 try:
@@ -40,11 +42,7 @@ try:
 except:
     from urllib.request import build_opener, HTTPRedirectHandler
     from urllib.parse import quote, unquote
-try:
-    from requests import get
-except:
-    def get(url, params=None, **kwargs):
-        raise Exception("please install requests library: opkg install python-requests")
+
     
 
 ####################### SETTINGS
@@ -106,6 +104,11 @@ def dwnpage(a, b):
     return downloadPage(a.encode('utf-8'), b) if sys.version_info >= (3, 0, 0) else downloadPage(a, b)
 
 def _load_url_sync(url, out_file, headers=None, timeout=20, verify_ssl=False):
+    try:
+        from requests import get
+    except:
+        def get(url, params=None, **kwargs):
+            raise Exception("please install requests library: opkg install python-requests")
     r = get(url, headers=headers or {}, timeout=timeout, verify=verify_ssl, stream=True)
     r.raise_for_status()
     with open(out_file, "wb") as f:
@@ -117,6 +120,11 @@ def _load_url_sync(url, out_file, headers=None, timeout=20, verify_ssl=False):
 def _dwnpageFallback(a, b, cbOk, cbErr, headers):
     def download_page(url, out_file, cbOk, cbErr, headers=None, timeout=20, verify_ssl=False):
         try:
+            try:
+                from requests import get
+            except:
+                def get(url, params=None, **kwargs):
+                    raise Exception("please install requests library: opkg install python-requests")
             r = get(url, headers=headers or {}, timeout=timeout, verify=verify_ssl, stream=True)
             r.raise_for_status()
             with open(out_file, "wb") as f:
@@ -1229,6 +1237,13 @@ class CSFDLCDScreen(Screen):
 # try replace IMDB plugin with this
 replaceImdb()
 
+def isDMMImage():
+    try:
+        from enigma import eMediaDatabase
+        return True
+    except:
+        return False
+
 def eventinfo(session, servicelist, **kwargs):
     ref = session.nav.getCurrentlyPlayingServiceReference()
     session.open(CSFDEPGSelection, ref)
@@ -1242,7 +1257,32 @@ def movielist(session, service, **kwargs):
     session.open(CSFDLite, eventName, popis)
 
 def main(session, eventName="", popis = "", **kwargs):
-    session.open(CSFDLite, eventName, popis)
+    def runApp(cb=None):
+        session.open(CSFDLite, eventName, popis)
+    # check dependecies
+    PLUGIN_PATH = os.path.join(resolveFilename(SCOPE_PLUGINS), 'Extensions/CSFDLite')
+    firstRun = os.path.join(PLUGIN_PATH, 'firstrun')
+    if os.path.isfile(firstRun):
+        os.remove(firstRun)
+        if sys.version_info >= (3, 0, 0):
+            cmds = [
+                "opkg update",
+                "opkg install python3-requests"
+            ]
+        else:
+            if isDMMImage():
+                cmds = [
+                    "apt-get update",
+                    "apt-get -y install python-requests"
+                ]
+            else:
+                cmds = [
+                "opkg update",
+                "opkg install python3-requests"
+            ]
+        session.openWithCallback(runApp, Console, title="Kontrolujem zavislosti", cmdlist=cmds, closeOnSuccess=False)
+    else:
+        session.open(CSFDLite, eventName, popis)
 
 def Plugins(**kwargs):
     try:
