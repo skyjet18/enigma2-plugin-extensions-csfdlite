@@ -2,7 +2,7 @@
 #####################################
 # CSFD Lite by origin from mik9
 #####################################
-PLUGIN_VERSION = "2.1"
+PLUGIN_VERSION = "2.3"
 
 ############## @TODOs
 # - lokalizacia cz, sk, en
@@ -1083,7 +1083,7 @@ class CSFDLite(Screen):
             zemerokdelka = self.najdi('<div class="origin">(.*?)</div>', self.inhtml)
             zemerokdelka = zemerokdelka.replace('<span itemprop="dateCreated">', '').replace('</span>', '').replace('<span>', '')
             zemerokdelka = re.sub('\s+'," ",zemerokdelka)
-            Detailstext += zemerokdelka + '\n\n'
+            Detailstext += self.odstraneniTagu(zemerokdelka) + '\n\n'
 
             vysilani = self.hledejVse('tv-list">\s+<a href=".*?">(.*?)</a>', self.inhtml)
             if vysilani:

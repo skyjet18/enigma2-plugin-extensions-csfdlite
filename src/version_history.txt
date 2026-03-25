@@ -1,3 +1,6 @@
+verzia 2.3 - 25.03.2026
+- drobne opravy
+
 verzia 2.2 - 25.03.2026
 - pridana kontrola zavyslosti
 

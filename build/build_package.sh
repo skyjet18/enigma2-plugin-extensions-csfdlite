@@ -15,6 +15,9 @@ fi
 PLUGINPATH=usr/lib/enigma2/python/Plugins/Extensions/CSFDLite
 PKG_NAME=csfdlite_${VER}
 
+sed -i -E "s/PLUGIN_VERSION = \"(.*?)\"$/PLUGIN_VERSION = \"$1\"/g" ../src/plugin.py
+echo -n "$VER" > ../version.txt
+
 cat > control/control << EOF
 Package: enigma2-plugin-extensions-csfdlite
 Version: $VER
