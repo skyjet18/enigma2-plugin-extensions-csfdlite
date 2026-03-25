@@ -1278,7 +1278,7 @@ def main(session, eventName="", popis = "", **kwargs):
             else:
                 cmds = [
                 "opkg update",
-                "opkg install python3-requests"
+                "opkg install python-requests"
             ]
         session.openWithCallback(runApp, Console, title="Kontrolujem zavislosti", cmdlist=cmds, closeOnSuccess=False)
     else:
